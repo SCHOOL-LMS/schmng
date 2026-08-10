@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as AuthenticatedPortalRouteImport } from './routes/_authenticated/portal'
 import { Route as AuthenticatedPortalIndexRouteImport } from './routes/_authenticated/portal.index'
+import { Route as AuthenticatedPortalModuleIdRouteImport } from './routes/_authenticated/portal.$moduleId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,16 +41,24 @@ const AuthenticatedPortalIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedPortalRoute,
   } as any)
+const AuthenticatedPortalModuleIdRoute =
+  AuthenticatedPortalModuleIdRouteImport.update({
+    id: '/$moduleId',
+    path: '/$moduleId',
+    getParentRoute: () => AuthenticatedPortalRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/setup': typeof SetupRoute
   '/portal': typeof AuthenticatedPortalRouteWithChildren
+  '/portal/$moduleId': typeof AuthenticatedPortalModuleIdRoute
   '/portal/': typeof AuthenticatedPortalIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/setup': typeof SetupRoute
+  '/portal/$moduleId': typeof AuthenticatedPortalModuleIdRoute
   '/portal': typeof AuthenticatedPortalIndexRoute
 }
 export interface FileRoutesById {
@@ -58,19 +67,21 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/setup': typeof SetupRoute
   '/_authenticated/portal': typeof AuthenticatedPortalRouteWithChildren
+  '/_authenticated/portal/$moduleId': typeof AuthenticatedPortalModuleIdRoute
   '/_authenticated/portal/': typeof AuthenticatedPortalIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/setup' | '/portal' | '/portal/'
+  fullPaths: '/' | '/setup' | '/portal' | '/portal/$moduleId' | '/portal/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/setup' | '/portal'
+  to: '/' | '/setup' | '/portal/$moduleId' | '/portal'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/setup'
     | '/_authenticated/portal'
+    | '/_authenticated/portal/$moduleId'
     | '/_authenticated/portal/'
   fileRoutesById: FileRoutesById
 }
@@ -117,14 +128,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPortalIndexRouteImport
       parentRoute: typeof AuthenticatedPortalRoute
     }
+    '/_authenticated/portal/$moduleId': {
+      id: '/_authenticated/portal/$moduleId'
+      path: '/$moduleId'
+      fullPath: '/portal/$moduleId'
+      preLoaderRoute: typeof AuthenticatedPortalModuleIdRouteImport
+      parentRoute: typeof AuthenticatedPortalRoute
+    }
   }
 }
 
 interface AuthenticatedPortalRouteChildren {
+  AuthenticatedPortalModuleIdRoute: typeof AuthenticatedPortalModuleIdRoute
   AuthenticatedPortalIndexRoute: typeof AuthenticatedPortalIndexRoute
 }
 
 const AuthenticatedPortalRouteChildren: AuthenticatedPortalRouteChildren = {
+  AuthenticatedPortalModuleIdRoute: AuthenticatedPortalModuleIdRoute,
   AuthenticatedPortalIndexRoute: AuthenticatedPortalIndexRoute,
 }
 
