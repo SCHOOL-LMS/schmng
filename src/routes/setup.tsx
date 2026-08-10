@@ -56,11 +56,18 @@ function SetupPage() {
       ["Super Administrator", superAdmin],
       ["School Manager", manager],
     ] as const) {
-      if (form.password.length < 8) return toast.error(`${label}: password must be 8+ characters.`);
-      if (form.password !== form.confirm) return toast.error(`${label}: passwords do not match.`);
+      if (form.password.length < 8) {
+        toast.error(`${label}: password must be 8+ characters.`);
+        return;
+      }
+      if (form.password !== form.confirm) {
+        toast.error(`${label}: passwords do not match.`);
+        return;
+      }
     }
     if (superAdmin.email.trim().toLowerCase() === manager.email.trim().toLowerCase()) {
-      return toast.error("The two accounts must use different email addresses.");
+      toast.error("The two accounts must use different email addresses.");
+      return;
     }
     setBusy(true);
     try {
