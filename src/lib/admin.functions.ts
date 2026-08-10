@@ -1,23 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-
-const accountSchema = z.object({
-  fullName: z.string().min(2).max(120),
-  email: z.string().email(),
-  password: z.string().min(8).max(200),
-});
-
-const roleEnum = z.enum(["super_admin", "school_manager", "staff", "student", "parent"]);
-const levelEnum = z.enum(["super_administrator", "administrator", "standard", "basic"]);
-
-const DEFAULT_LEVEL: Record<string, string> = {
-  super_admin: "super_administrator",
-  school_manager: "administrator",
-  staff: "standard",
-  student: "basic",
-  parent: "basic",
-};
+import {
+  adminResetSchema,
+  createAccountSchema,
+  DEFAULT_LEVEL,
+  resetRequestSchema,
+  setupSchema,
+} from "@/lib/admin.schemas";
+import { assertAdmin, isSuperAdmin } from "@/lib/admin.server";
 
 /** Has the system already been initialised with a super admin? */
 export const getSetupStatus = createServerFn({ method: "GET" }).handler(async () => {
@@ -35,9 +25,7 @@ export const getSetupStatus = createServerFn({ method: "GET" }).handler(async ()
 
 /** One-time bootstrap: creates the initial Super Admin and School Manager accounts. */
 export const runInitialSetup = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
-    z.object({ superAdmin: accountSchema, schoolManager: accountSchema }).parse(d),
-  )
+  .inputValidator((d: unknown) => setupSchema.parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -45,15 +33,15 @@ export const runInitialSetup = createServerFn({ method: "POST" })
       .from("user_roles")
       .select("id", { count: "exact", head: true })
       .eq("role", "super_admin");
-    if ((count ?? 0) > 0) {
-      throw new Error("Setup has already been completed for this system.");
-    }
+    if ((count ?? 0) > 0) throw new Error("Setup has already been completed for this system.");
 
     const created: string[] = [];
-    for (const [role, account] of [
+    const pairs = [
       ["super_admin", data.superAdmin],
       ["school_manager", data.schoolManager],
-    ] as const) {
+    ] as const;
+
+    for (const [role, account] of pairs) {
       const { data: user, error } = await supabaseAdmin.auth.admin.createUser({
         email: account.email,
         password: account.password,
@@ -67,7 +55,7 @@ export const runInitialSetup = createServerFn({ method: "POST" })
         full_name: account.fullName,
         email: account.email,
         role,
-        access_level: DEFAULT_LEVEL[role] as "super_administrator" | "administrator",
+        access_level: DEFAULT_LEVEL[role] as "super_administrator",
         status: "active",
       });
       await supabaseAdmin.from("user_roles").insert({ user_id: user.user.id, role });
@@ -76,11 +64,9 @@ export const runInitialSetup = createServerFn({ method: "POST" })
     return { created };
   });
 
-/** Public: raise a password reset request. Only an admin can actually reset it. */
+/** Public: raise a password reset request. Only an admin can actually reset the password. */
 export const requestPasswordReset = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
-    z.object({ email: z.string().email(), note: z.string().max(500).optional() }).parse(d),
-  )
+  .inputValidator((d: unknown) => resetRequestSchema.parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin.from("password_reset_requests").insert({
@@ -90,16 +76,11 @@ export const requestPasswordReset = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-async function assertAdmin(context: { supabase: { rpc: Function }; userId: string }) {
-  const { data, error } = await context.supabase.rpc("is_admin", { _user_id: context.userId });
-  if (error || !data) throw new Error("Forbidden");
-}
-
 /** Admin: list all accounts. */
 export const listAccounts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context as never);
+    await assertAdmin(context.supabase, context.userId);
     const { data, error } = await context.supabase
       .from("profiles")
       .select("id, full_name, email, role, access_level, status, last_login, created_at")
@@ -108,19 +89,16 @@ export const listAccounts = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
-/** Admin: create a user account (no self sign-up exists anywhere in the app). */
+/** Admin: create a user account. There is no self sign-up anywhere in the app. */
 export const createAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    accountSchema.extend({ role: roleEnum, accessLevel: levelEnum.optional() }).parse(d),
-  )
+  .inputValidator((d: unknown) => createAccountSchema.parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
-    const isSuper = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "super_admin",
-    });
-    if (data.role === "super_admin" && !isSuper.data) {
+    await assertAdmin(context.supabase, context.userId);
+    if (
+      (data.role === "super_admin" || data.role === "school_manager") &&
+      !(await isSuperAdmin(context.supabase, context.userId))
+    ) {
       throw new Error("Only a Super Admin can create administrator accounts.");
     }
 
@@ -148,29 +126,39 @@ export const createAccount = createServerFn({ method: "POST" })
 /** Admin: reset another user's password. Users can never reset their own. */
 export const adminResetPassword = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ userId: z.string().uuid(), password: z.string().min(8).max(200) }).parse(d),
-  )
+  .inputValidator((d: unknown) => adminResetSchema.parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
+    await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
       password: data.password,
     });
     if (error) throw new Error(error.message);
-    await supabaseAdmin
-      .from("password_reset_requests")
-      .update({ status: "completed", handled_by: context.userId, handled_at: new Date().toISOString() })
-      .eq("status", "pending")
-      .eq("email", (await supabaseAdmin.from("profiles").select("email").eq("id", data.userId).single()).data?.email ?? "");
+
+    const target = await supabaseAdmin
+      .from("profiles")
+      .select("email")
+      .eq("id", data.userId)
+      .maybeSingle();
+    if (target.data?.email) {
+      await supabaseAdmin
+        .from("password_reset_requests")
+        .update({
+          status: "completed",
+          handled_by: context.userId,
+          handled_at: new Date().toISOString(),
+        })
+        .eq("status", "pending")
+        .eq("email", target.data.email.toLowerCase());
+    }
     return { ok: true };
   });
 
-/** Admin: pending password reset requests. */
+/** Admin: recent password reset requests. */
 export const listResetRequests = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context as never);
+    await assertAdmin(context.supabase, context.userId);
     const { data, error } = await context.supabase
       .from("password_reset_requests")
       .select("id, email, note, status, created_at")
