@@ -70,7 +70,7 @@ export const ROLE_META: Record<Role, RoleMeta> = {
   staff: {
     id: "staff",
     label: "Staff",
-    tagline: "Teaching, Library, and General Staff",
+    tagline: "Teaching, Non-, and General Staff",
     accessLevel: "standard",
     accent: "role-staff",
   },
