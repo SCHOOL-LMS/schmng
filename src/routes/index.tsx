@@ -124,9 +124,8 @@ function Landing() {
                 );
               })}
             </div>
-            <p className="mt-8 text-center text-sm text-muted-foreground">
-              Accounts are created by administrators only. Modules are available inside the
-              portal, based on your access level.
+            <p className="mt-8 text-center text-sm text-muted-foreground whitespace-pre-wrap">
+              {"About Us           Contact Us            Privacy Policy          Terms of Service            AI Assistant            FAQ          Resources "}
             </p>
           </section>
         ) : (
