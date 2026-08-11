@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          created_at: string
+          description: string
+          details: Json
+          id: string
+          target_email: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          description?: string
+          details?: Json
+          id?: string
+          target_email?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          description?: string
+          details?: Json
+          id?: string
+          target_email?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       password_reset_requests: {
         Row: {
           created_at: string
@@ -47,35 +83,95 @@ export type Database = {
       profiles: {
         Row: {
           access_level: Database["public"]["Enums"]["access_level"]
+          class_name: string | null
           created_at: string
+          department: string | null
           email: string
+          force_password_change: boolean
           full_name: string
+          gender: string | null
           id: string
           last_login: string | null
+          password_reset_at: string | null
+          permissions: Json
           role: Database["public"]["Enums"]["app_role"]
           status: string
+          two_factor_enabled: boolean
           updated_at: string
+          username: string | null
         }
         Insert: {
           access_level?: Database["public"]["Enums"]["access_level"]
+          class_name?: string | null
           created_at?: string
+          department?: string | null
           email?: string
+          force_password_change?: boolean
           full_name?: string
+          gender?: string | null
           id: string
           last_login?: string | null
+          password_reset_at?: string | null
+          permissions?: Json
           role?: Database["public"]["Enums"]["app_role"]
           status?: string
+          two_factor_enabled?: boolean
           updated_at?: string
+          username?: string | null
         }
         Update: {
           access_level?: Database["public"]["Enums"]["access_level"]
+          class_name?: string | null
           created_at?: string
+          department?: string | null
           email?: string
+          force_password_change?: boolean
           full_name?: string
+          gender?: string | null
           id?: string
           last_login?: string | null
+          password_reset_at?: string | null
+          permissions?: Json
           role?: Database["public"]["Enums"]["app_role"]
           status?: string
+          two_factor_enabled?: boolean
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      security_settings: {
+        Row: {
+          allowed_ips: string
+          created_at: string
+          id: string
+          lockout_duration: number
+          max_concurrent_sessions: number
+          max_login_attempts: number
+          session_timeout: number
+          singleton: boolean
+          updated_at: string
+        }
+        Insert: {
+          allowed_ips?: string
+          created_at?: string
+          id?: string
+          lockout_duration?: number
+          max_concurrent_sessions?: number
+          max_login_attempts?: number
+          session_timeout?: number
+          singleton?: boolean
+          updated_at?: string
+        }
+        Update: {
+          allowed_ips?: string
+          created_at?: string
+          id?: string
+          lockout_duration?: number
+          max_concurrent_sessions?: number
+          max_login_attempts?: number
+          session_timeout?: number
+          singleton?: boolean
           updated_at?: string
         }
         Relationships: []

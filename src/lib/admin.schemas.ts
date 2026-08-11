@@ -14,6 +14,26 @@ export const levelEnum = z.enum([
   "basic",
 ]);
 
+export const permissionEnum = z.enum([
+  "user_manage",
+  "student_manage",
+  "staff_manage",
+  "finance_view",
+  "finance_edit",
+  "reports_view",
+  "reports_edit",
+  "settings_manage",
+]);
+
+const profileExtras = {
+  username: z.string().min(3).max(60).optional().nullable(),
+  gender: z.string().max(60).optional().nullable(),
+  department: z.string().max(120).optional().nullable(),
+  className: z.string().max(60).optional().nullable(),
+  twoFactorEnabled: z.boolean().optional(),
+  permissions: z.array(permissionEnum).optional(),
+};
+
 export const setupSchema = z.object({
   superAdmin: accountSchema,
   schoolManager: accountSchema,
@@ -22,7 +42,25 @@ export const setupSchema = z.object({
 export const createAccountSchema = accountSchema.extend({
   role: roleEnum,
   accessLevel: levelEnum.optional(),
+  ...profileExtras,
 });
+
+export const updateAccountSchema = z.object({
+  userId: z.string().uuid(),
+  fullName: z.string().min(2).max(120),
+  email: z.string().email(),
+  role: roleEnum,
+  accessLevel: levelEnum,
+  status: z.enum(["active", "suspended", "inactive"]),
+  ...profileExtras,
+});
+
+export const statusSchema = z.object({
+  userId: z.string().uuid(),
+  status: z.enum(["active", "suspended", "inactive"]),
+});
+
+export const deleteAccountSchema = z.object({ userId: z.string().uuid() });
 
 export const resetRequestSchema = z.object({
   email: z.string().email(),
@@ -32,6 +70,31 @@ export const resetRequestSchema = z.object({
 export const adminResetSchema = z.object({
   userId: z.string().uuid(),
   password: z.string().min(8).max(200),
+});
+
+export const bulkImportSchema = z.object({
+  users: z
+    .array(
+      z.object({
+        fullName: z.string().min(2).max(120),
+        email: z.string().email(),
+        role: roleEnum,
+        password: z.string().min(8).max(200),
+        username: z.string().max(60).optional(),
+        department: z.string().max(120).optional(),
+        className: z.string().max(60).optional(),
+      }),
+    )
+    .min(1)
+    .max(200),
+});
+
+export const securitySettingsSchema = z.object({
+  allowedIps: z.string().max(4000),
+  maxLoginAttempts: z.number().int().min(1).max(10),
+  lockoutDuration: z.number().int().min(5).max(1440),
+  sessionTimeout: z.number().int().min(5).max(480),
+  maxConcurrentSessions: z.number().int().min(1).max(10),
 });
 
 export const DEFAULT_LEVEL: Record<string, string> = {
