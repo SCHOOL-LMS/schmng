@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ACCESS_LABEL, ROLES, ROLE_META, type Role } from "@/lib/access";
-import { getSetupStatus, requestPasswordReset } from "@/lib/admin.functions";
+import { getSetupStatus, recordLogin, requestPasswordReset } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -154,6 +154,7 @@ function AuthPanel({
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const raiseReset = useServerFn(requestPasswordReset);
+  const stampLogin = useServerFn(recordLogin);
 
   const signIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -182,10 +183,11 @@ function AuthPanel({
       toast.error(`This account is not registered as ${meta.label}.`);
       return;
     }
-    await supabase
-      .from("profiles")
-      .update({ last_login: new Date().toISOString() })
-      .eq("id", data.user.id);
+    try {
+      await stampLogin({ data: undefined });
+    } catch {
+      // non-blocking: login tracking must never prevent access
+    }
     navigate({ to: "/portal" });
   };
 
