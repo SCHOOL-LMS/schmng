@@ -26,6 +26,7 @@ interface AuditRow {
   id: string;
   action: string;
   description: string;
+  actor_email: string | null;
   target_email: string | null;
   created_at: string;
 }
@@ -59,7 +60,8 @@ export function AuditLogsPanel({ canClear }: { canClear: boolean }) {
     const matches =
       !q ||
       r.description.toLowerCase().includes(q) ||
-      (r.target_email ?? "").toLowerCase().includes(q);
+      (r.target_email ?? "").toLowerCase().includes(q) ||
+      (r.actor_email ?? "").toLowerCase().includes(q);
     return matches && (action === "all" || r.action === action);
   });
 
@@ -100,6 +102,7 @@ export function AuditLogsPanel({ canClear }: { canClear: boolean }) {
                   timestamp: r.created_at,
                   action: r.action,
                   description: r.description,
+                  actor: r.actor_email ?? "",
                   target: r.target_email ?? "",
                 })),
               )
@@ -135,13 +138,14 @@ export function AuditLogsPanel({ canClear }: { canClear: boolean }) {
               <TableHead>Timestamp</TableHead>
               <TableHead>Action</TableHead>
               <TableHead>Description</TableHead>
+              <TableHead>Actor</TableHead>
               <TableHead>Target</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                <TableCell colSpan={5} className="text-center text-muted-foreground">
                   No activity recorded.
                 </TableCell>
               </TableRow>
@@ -153,6 +157,7 @@ export function AuditLogsPanel({ canClear }: { canClear: boolean }) {
                   </TableCell>
                   <TableCell className="capitalize">{r.action.replace(/_/g, " ")}</TableCell>
                   <TableCell>{r.description}</TableCell>
+                  <TableCell>{r.actor_email ?? "—"}</TableCell>
                   <TableCell>{r.target_email ?? "—"}</TableCell>
                 </TableRow>
               ))

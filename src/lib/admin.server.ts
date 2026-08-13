@@ -59,10 +59,17 @@ export async function logAudit(
     details?: Record<string, unknown>;
   },
 ) {
+  const { data: actor } = await supabase
+    .from("profiles")
+    .select("email")
+    .eq("id", actorId)
+    .maybeSingle();
+
   await supabase.from("audit_logs").insert({
     action: entry.action,
     description: entry.description,
     actor_id: actorId,
+    actor_email: (actor as { email?: string } | null)?.email ?? null,
     target_user_id: entry.targetUserId ?? null,
     target_email: entry.targetEmail ?? null,
     details: entry.details ?? {},

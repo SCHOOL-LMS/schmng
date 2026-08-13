@@ -352,7 +352,7 @@ export const listAuditLogs = createServerFn({ method: "GET" })
     await assertAdmin(context.supabase, context.userId);
     const { data, error } = await context.supabase
       .from("audit_logs")
-      .select("id, action, description, actor_id, target_email, created_at")
+      .select("id, action, description, actor_id, actor_email, target_email, created_at")
       .order("created_at", { ascending: false })
       .limit(200);
     if (error) throw new Error(error.message);
