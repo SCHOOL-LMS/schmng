@@ -454,3 +454,27 @@ export const lockAllAccounts = createServerFn({ method: "POST" })
     });
     return { affected: count ?? 0 };
   });
+
+/** Any signed-in user: stamp last login and record the event in the audit trail. */
+export const recordLogin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const now = new Date().toISOString();
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .update({ last_login: now })
+      .eq("id", context.userId)
+      .select("email, role")
+      .maybeSingle();
+
+    await supabaseAdmin.from("audit_logs").insert({
+      action: "login",
+      description: `${profile?.email ?? context.userId} signed in as ${profile?.role ?? "user"}`,
+      actor_id: context.userId,
+      actor_email: profile?.email ?? null,
+      target_user_id: context.userId,
+      target_email: profile?.email ?? null,
+    });
+    return { ok: true };
+  });
