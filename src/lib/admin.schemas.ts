@@ -72,6 +72,20 @@ export const adminResetSchema = z.object({
   password: z.string().min(8).max(200),
 });
 
+export const resolveResetRequestSchema = z
+  .object({
+    requestId: z.string().uuid(),
+    action: z.enum(["approve", "reject"]),
+    password: z.string().min(8).max(200).optional(),
+  })
+  .refine((v) => v.action !== "approve" || !!v.password, {
+    message: "A new password is required to approve a reset request.",
+    path: ["password"],
+  });
+
+export const resetRequestIdSchema = z.object({ requestId: z.string().uuid() });
+
+
 export const bulkImportSchema = z.object({
   users: z
     .array(
