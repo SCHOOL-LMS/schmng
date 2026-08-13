@@ -154,6 +154,7 @@ function AuthPanel({
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const raiseReset = useServerFn(requestPasswordReset);
+  const stampLogin = useServerFn(recordLogin);
 
   const signIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -182,10 +183,11 @@ function AuthPanel({
       toast.error(`This account is not registered as ${meta.label}.`);
       return;
     }
-    await supabase
-      .from("profiles")
-      .update({ last_login: new Date().toISOString() })
-      .eq("id", data.user.id);
+    try {
+      await stampLogin({ data: undefined });
+    } catch {
+      // non-blocking: login tracking must never prevent access
+    }
     navigate({ to: "/portal" });
   };
 
