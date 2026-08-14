@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
+  Check,
   Download,
   KeyRound,
   Pencil,
@@ -10,7 +11,9 @@ import {
   Trash2,
   Upload,
   UserPlus,
+  X,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -34,8 +37,10 @@ import {
   bulkImportAccounts,
   createAccount,
   deleteAccount,
+  deleteResetRequest,
   listAccounts,
   listResetRequests,
+  resolveResetRequest,
   setAccountStatus,
   updateAccount,
 } from "@/lib/admin.functions";
@@ -52,12 +57,20 @@ interface ResetRow {
   note: string | null;
   status: string;
   created_at: string;
+  handled_at: string | null;
+  handled_by: string | null;
 }
 
 const STATUS_STYLE: Record<string, string> = {
   active: "border-success/30 bg-success/10 text-success",
   suspended: "border-warning/40 bg-warning/10 text-warning",
   inactive: "border-border bg-muted text-muted-foreground",
+};
+
+const REQUEST_STYLE: Record<string, string> = {
+  pending: "border-warning/40 bg-warning/10 text-warning",
+  completed: "border-success/30 bg-success/10 text-success",
+  rejected: "border-destructive/30 bg-destructive/10 text-destructive",
 };
 
 export function UserManagement() {
@@ -72,6 +85,9 @@ export function UserManagement() {
   const removeAccount = useServerFn(deleteAccount);
   const resetPassword = useServerFn(adminResetPassword);
   const importAccounts = useServerFn(bulkImportAccounts);
+  const resolveRequest = useServerFn(resolveResetRequest);
+  const dropRequest = useServerFn(deleteResetRequest);
+
 
   const [accounts, setAccounts] = useState<AccountRow[]>([]);
   const [requests, setRequests] = useState<ResetRow[]>([]);
@@ -124,6 +140,52 @@ export function UserManagement() {
     }),
     [accounts],
   );
+
+  const pendingRequests = useMemo(
+    () => requests.filter((r) => r.status === "pending").length,
+    [requests],
+  );
+
+  const approveRequest = async (row: ResetRow) => {
+    const password = window.prompt(
+      `New password for ${row.email} (min 8 characters)`,
+      generateSecurePassword(),
+    );
+    if (!password) return;
+    if (password.length < 8) {
+      toast.error("Password must be at least 8 characters.");
+      return;
+    }
+    try {
+      await resolveRequest({ data: { requestId: row.id, action: "approve", password } });
+      toast.success("Password reset. Share it with the user securely.");
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not approve the request");
+    }
+  };
+
+  const rejectRequest = async (row: ResetRow) => {
+    if (!window.confirm(`Reject the reset request from ${row.email}?`)) return;
+    try {
+      await resolveRequest({ data: { requestId: row.id, action: "reject" } });
+      toast.success("Request rejected");
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not reject the request");
+    }
+  };
+
+  const removeRequest = async (row: ResetRow) => {
+    try {
+      await dropRequest({ data: { requestId: row.id } });
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not remove the request");
+    }
+  };
+
+
 
   const submitForm = async (values: UserFormValues) => {
     setBusy(true);
@@ -468,7 +530,12 @@ export function UserManagement() {
         </section>
 
         <section className="surface p-6">
-          <h2 className="mb-4 text-lg font-semibold">Password reset requests</h2>
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <h2 className="text-lg font-semibold">Password reset requests</h2>
+            <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
+              {pendingRequests} pending
+            </span>
+          </div>
           {requests.length === 0 ? (
             <p className="text-sm text-muted-foreground">No requests.</p>
           ) : (
@@ -476,18 +543,47 @@ export function UserManagement() {
               {requests.map((r) => (
                 <li key={r.id} className="flex flex-wrap items-center gap-3 py-3 text-sm">
                   <span className="font-medium">{r.email}</span>
-                  <span className="text-muted-foreground">{r.note}</span>
-                  <span className="ml-auto rounded-full border border-border px-2 py-0.5 text-xs capitalize">
+                  {r.note && <span className="text-muted-foreground">{r.note}</span>}
+                  <span
+                    className={`ml-auto rounded-full border px-2 py-0.5 text-xs capitalize ${
+                      REQUEST_STYLE[r.status] ?? REQUEST_STYLE["pending"]
+                    }`}
+                  >
                     {r.status}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {new Date(r.created_at).toLocaleString()}
+                    {new Date(r.handled_at ?? r.created_at).toLocaleString()}
                   </span>
+                  {r.status === "pending" ? (
+                    <span className="flex gap-1">
+                      <Button size="sm" onClick={() => void approveRequest(r)}>
+                        <Check className="size-4" aria-hidden /> Approve
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => void rejectRequest(r)}
+                      >
+                        <X className="size-4" aria-hidden /> Reject
+                      </Button>
+                    </span>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      title="Remove from queue"
+                      onClick={() => void removeRequest(r)}
+                    >
+                      <Trash2 className="size-4" aria-hidden />
+                      <span className="sr-only">Remove request from {r.email}</span>
+                    </Button>
+                  )}
                 </li>
               ))}
             </ul>
           )}
         </section>
+
       </TabsContent>
 
       <TabsContent value="security">
