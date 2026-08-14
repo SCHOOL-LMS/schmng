@@ -6,8 +6,11 @@ import {
   createAccountSchema,
   DEFAULT_LEVEL,
   deleteAccountSchema,
+  resetRequestIdSchema,
   resetRequestSchema,
+  resolveResetRequestSchema,
   securitySettingsSchema,
+
   setupSchema,
   statusSchema,
   updateAccountSchema,
@@ -75,17 +78,41 @@ export const runInitialSetup = createServerFn({ method: "POST" })
     return { created };
   });
 
-/** Public: raise a password reset request. Only an admin can actually reset the password. */
+/**
+ * Public: raise a password reset request. Only an admin can actually reset the
+ * password. Repeat requests update the existing pending row instead of piling
+ * up duplicates, and the response never reveals whether the account exists.
+ */
 export const requestPasswordReset = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => resetRequestSchema.parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.from("password_reset_requests").insert({
-      email: data.email.toLowerCase(),
-      note: data.note ?? null,
-    });
+    const email = data.email.trim().toLowerCase();
+    const note = data.note?.trim() || null;
+
+    const { data: existing } = await supabaseAdmin
+      .from("password_reset_requests")
+      .select("id")
+      .eq("email", email)
+      .eq("status", "pending")
+      .maybeSingle();
+
+    if (existing) {
+      await supabaseAdmin
+        .from("password_reset_requests")
+        .update({ note, created_at: new Date().toISOString() })
+        .eq("id", existing.id);
+    } else {
+      await supabaseAdmin.from("password_reset_requests").insert({ email, note });
+      await supabaseAdmin.from("audit_logs").insert({
+        action: "reset_requested",
+        description: `Password reset requested for ${email}`,
+        target_email: email,
+      });
+    }
     return { ok: true };
   });
+
 
 /** Admin: list all accounts. */
 export const listAccounts = createServerFn({ method: "GET" })
@@ -338,12 +365,96 @@ export const listResetRequests = createServerFn({ method: "GET" })
     await assertAdmin(context.supabase, context.userId);
     const { data, error } = await context.supabase
       .from("password_reset_requests")
-      .select("id, email, note, status, created_at")
+      .select("id, email, note, status, created_at, handled_at, handled_by")
       .order("created_at", { ascending: false })
-      .limit(50);
+      .limit(100);
     if (error) throw new Error(error.message);
     return data ?? [];
   });
+
+/**
+ * Admin: approve a pending reset request (sets the new password and forces a
+ * change on next sign-in) or reject it. Approval requires the account to exist.
+ */
+export const resolveResetRequest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => resolveResetRequestSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: request, error: readError } = await supabaseAdmin
+      .from("password_reset_requests")
+      .select("id, email, status")
+      .eq("id", data.requestId)
+      .maybeSingle();
+    if (readError) throw new Error(readError.message);
+    if (!request) throw new Error("That reset request no longer exists.");
+    if (request.status !== "pending") throw new Error("This request has already been handled.");
+
+    const now = new Date().toISOString();
+
+    if (data.action === "reject") {
+      const { error } = await supabaseAdmin
+        .from("password_reset_requests")
+        .update({ status: "rejected", handled_by: context.userId, handled_at: now })
+        .eq("id", request.id);
+      if (error) throw new Error(error.message);
+
+      await logAudit(context.supabase, context.userId, {
+        action: "reset_rejected",
+        description: `Rejected password reset request for ${request.email}`,
+        targetEmail: request.email,
+      });
+      return { ok: true, status: "rejected" as const };
+    }
+
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("id, email")
+      .ilike("email", request.email)
+      .maybeSingle();
+    if (!profile) throw new Error("No account exists for that email address.");
+
+    const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(profile.id, {
+      password: data.password!,
+    });
+    if (authError) throw new Error(authError.message);
+
+    await supabaseAdmin
+      .from("profiles")
+      .update({ force_password_change: true, password_reset_at: now })
+      .eq("id", profile.id);
+
+    const { error } = await supabaseAdmin
+      .from("password_reset_requests")
+      .update({ status: "completed", handled_by: context.userId, handled_at: now })
+      .eq("id", request.id);
+    if (error) throw new Error(error.message);
+
+    await logAudit(context.supabase, context.userId, {
+      action: "reset_approved",
+      description: `Approved password reset for ${profile.email}`,
+      targetUserId: profile.id,
+      targetEmail: profile.email,
+    });
+    return { ok: true, status: "completed" as const };
+  });
+
+/** Admin: remove a handled reset request from the queue. */
+export const deleteResetRequest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => resetRequestIdSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { error } = await context.supabase
+      .from("password_reset_requests")
+      .delete()
+      .eq("id", data.requestId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 
 /** Admin: audit log feed. */
 export const listAuditLogs = createServerFn({ method: "GET" })
