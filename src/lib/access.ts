@@ -284,18 +284,36 @@ export const MODULES: ModuleDef[] = [
   },
 ];
 
+/**
+ * The lowest access level that can reach a module, derived from the default
+ * level of the least-privileged role allowed on it. Keeping it derived means
+ * role lists and level gates can never drift apart.
+ */
+export function moduleMinLevel(mod: ModuleDef): AccessLevel {
+  return mod.roles
+    .map((r) => ROLE_META[r].accessLevel)
+    .reduce((a, b) => (ACCESS_RANK[a] <= ACCESS_RANK[b] ? a : b), "super_administrator");
+}
+
 export function modulesForRole(role: Role): ModuleDef[] {
   return MODULES.filter((m) => m.roles.includes(role));
+}
+
+/** Modules visible to a user: allowed for the role AND within their access level. */
+export function modulesFor(role: Role, level: AccessLevel): ModuleDef[] {
+  return modulesForRole(role).filter((m) => ACCESS_RANK[level] >= ACCESS_RANK[moduleMinLevel(m)]);
 }
 
 export function getModule(id: string): ModuleDef | undefined {
   return MODULES.find((m) => m.id === id);
 }
 
-export function canAccess(role: Role, moduleId: string): boolean {
+export function canAccess(role: Role, level: AccessLevel, moduleId: string): boolean {
   const mod = getModule(moduleId);
-  return !!mod && mod.roles.includes(role);
+  if (!mod || !mod.roles.includes(role)) return false;
+  return ACCESS_RANK[level] >= ACCESS_RANK[moduleMinLevel(mod)];
 }
+
 
 export const MODULE_CATEGORIES: ModuleCategory[] = [
   "Operations",

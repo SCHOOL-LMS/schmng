@@ -3,6 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   adminResetSchema,
   bulkImportSchema,
+  changeOwnPasswordSchema,
   createAccountSchema,
   DEFAULT_LEVEL,
   deleteAccountSchema,
@@ -19,6 +20,7 @@ import {
   ACCOUNT_COLUMNS,
   assertAdmin,
   assertSuperAdmin,
+  isAdmin,
   isSuperAdmin,
   logAudit,
 } from "@/lib/admin.server";
@@ -588,4 +590,77 @@ export const recordLogin = createServerFn({ method: "POST" })
       target_email: profile?.email ?? null,
     });
     return { ok: true };
+  });
+
+/**
+ * Any signed-in user: change their own password. This is the only self-service
+ * password path in the system and exists solely so a user forced to change
+ * after an administrator reset can clear that flag. It cannot be used to reset
+ * anybody else's password.
+ */
+export const changeOwnPassword = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => changeOwnPasswordSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(context.userId, {
+      password: data.password,
+    });
+    if (error) throw new Error(error.message);
+
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .update({ force_password_change: false, password_reset_at: new Date().toISOString() })
+      .eq("id", context.userId)
+      .select("email")
+      .maybeSingle();
+
+    await supabaseAdmin.from("audit_logs").insert({
+      action: "password_changed",
+      description: `${profile?.email ?? context.userId} changed their own password`,
+      actor_id: context.userId,
+      actor_email: profile?.email ?? null,
+      target_user_id: context.userId,
+      target_email: profile?.email ?? null,
+    });
+    return { ok: true };
+  });
+
+/**
+ * Any signed-in user: the activity feed and session policy the portal home
+ * needs. Non-admins only ever see their own events.
+ */
+export const getPortalOverview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const admin = await isAdmin(context.supabase, context.userId);
+
+    let query = context.supabase
+      .from("audit_logs")
+      .select("id, action, description, actor_email, created_at")
+      .order("created_at", { ascending: false })
+      .limit(8);
+    if (!admin) query = query.eq("actor_id", context.userId);
+    const { data: activity } = await query;
+
+    let pendingResets = 0;
+    if (admin) {
+      const { count } = await context.supabase
+        .from("password_reset_requests")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending");
+      pendingResets = count ?? 0;
+    }
+
+    const { data: settings } = await context.supabase
+      .from("security_settings")
+      .select("session_timeout")
+      .maybeSingle();
+
+    return {
+      isAdmin: admin,
+      activity: activity ?? [],
+      pendingResets,
+      sessionTimeout: settings?.session_timeout ?? 30,
+    };
   });

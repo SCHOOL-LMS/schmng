@@ -1,11 +1,16 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { School, LogOut, Menu } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/hooks/useSession";
-import { ACCESS_LABEL, MODULE_CATEGORIES, ROLE_META, modulesForRole } from "@/lib/access";
+import { ACCESS_LABEL, MODULE_CATEGORIES, ROLE_META, modulesFor } from "@/lib/access";
+import { getPortalOverview } from "@/lib/admin.functions";
+import { ForcePasswordChange } from "@/components/portal/ForcePasswordChange";
+import { useIdleLogout } from "@/hooks/useIdleLogout";
 
 export const Route = createFileRoute("/_authenticated/portal")({
   head: () => ({
@@ -27,18 +32,31 @@ export const Route = createFileRoute("/_authenticated/portal")({
 });
 
 function PortalLayout() {
-  const { profile, loading } = useSession();
+  const { profile, loading, refresh } = useSession();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  const signOut = async () => {
+  const overviewFn = useServerFn(getPortalOverview);
+  const { data: overview } = useQuery({
+    queryKey: ["portal-overview"],
+    queryFn: () => overviewFn(),
+    enabled: !!profile,
+    staleTime: 60_000,
+  });
+
+  const signOut = async (message?: string) => {
     await queryClient.cancelQueries();
     queryClient.clear();
     await supabase.auth.signOut();
+    if (message) toast.info(message);
     navigate({ to: "/", replace: true });
   };
+
+  useIdleLogout(overview?.sessionTimeout ?? 0, () => {
+    void signOut("You were signed out after a period of inactivity.");
+  });
 
   if (loading || !profile) {
     return (
@@ -48,8 +66,20 @@ function PortalLayout() {
     );
   }
 
+  // An account suspended while signed in loses access immediately.
+  if (profile.status !== "active") {
+    void signOut("This account is no longer active. Contact an administrator.");
+    return null;
+  }
+
+  if (profile.force_password_change) {
+    return (
+      <ForcePasswordChange onDone={() => refresh()} onSignOut={() => signOut()} />
+    );
+  }
+
   const meta = ROLE_META[profile.role];
-  const modules = modulesForRole(profile.role);
+  const modules = modulesFor(profile.role, profile.access_level);
 
   return (
     <div className="min-h-screen bg-background">
@@ -78,7 +108,7 @@ function PortalLayout() {
             <Button
               variant="ghost"
               className="text-ink-foreground hover:bg-white/10"
-              onClick={signOut}
+              onClick={() => void signOut()}
             >
               <LogOut className="size-4" aria-hidden /> Logout
             </Button>

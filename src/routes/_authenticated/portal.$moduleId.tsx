@@ -29,7 +29,7 @@ function ModulePage() {
     );
   }
 
-  if (!canAccess(profile.role, mod.id)) {
+  if (!canAccess(profile.role, profile.access_level, mod.id)) {
     return (
       <Panel title="Access denied">
         <div className="flex items-start gap-3">
