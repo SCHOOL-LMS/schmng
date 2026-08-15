@@ -118,3 +118,7 @@ export const DEFAULT_LEVEL: Record<string, string> = {
   student: "basic",
   parent: "basic",
 };
+
+export const changeOwnPasswordSchema = z.object({
+  password: z.string().min(8).max(200),
+});
