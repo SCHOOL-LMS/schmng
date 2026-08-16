@@ -32,6 +32,20 @@ const profileExtras = {
   className: z.string().max(60).optional().nullable(),
   twoFactorEnabled: z.boolean().optional(),
   permissions: z.array(permissionEnum).optional(),
+  phone: z.string().max(40).optional().nullable(),
+  position: z.string().max(120).optional().nullable(),
+  salary: z.number().min(0).max(100000000).optional().nullable(),
+  startDate: z.string().max(20).optional().nullable(),
+};
+
+/** Payroll requires a salary for staff-side roles. */
+export const PAYROLL_ROLES = ["staff", "school_manager"] as const;
+const requireSalary = (v: { role: string; salary?: number | null | undefined }) =>
+  !(PAYROLL_ROLES as readonly string[]).includes(v.role) ||
+  (typeof v.salary === "number" && v.salary > 0);
+const salaryIssue = {
+  message: "Salary is required for staff and school manager accounts.",
+  path: ["salary"] as (string | number)[],
 };
 
 export const setupSchema = z.object({
@@ -39,21 +53,25 @@ export const setupSchema = z.object({
   schoolManager: accountSchema,
 });
 
-export const createAccountSchema = accountSchema.extend({
-  role: roleEnum,
-  accessLevel: levelEnum.optional(),
-  ...profileExtras,
-});
+export const createAccountSchema = accountSchema
+  .extend({
+    role: roleEnum,
+    accessLevel: levelEnum.optional(),
+    ...profileExtras,
+  })
+  .refine(requireSalary, salaryIssue);
 
-export const updateAccountSchema = z.object({
-  userId: z.string().uuid(),
-  fullName: z.string().min(2).max(120),
-  email: z.string().email(),
-  role: roleEnum,
-  accessLevel: levelEnum,
-  status: z.enum(["active", "suspended", "inactive"]),
-  ...profileExtras,
-});
+export const updateAccountSchema = z
+  .object({
+    userId: z.string().uuid(),
+    fullName: z.string().min(2).max(120),
+    email: z.string().email(),
+    role: roleEnum,
+    accessLevel: levelEnum,
+    status: z.enum(["active", "suspended", "inactive"]),
+    ...profileExtras,
+  })
+  .refine(requireSalary, salaryIssue);
 
 export const statusSchema = z.object({
   userId: z.string().uuid(),

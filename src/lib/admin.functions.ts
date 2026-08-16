@@ -164,6 +164,10 @@ export const createAccount = createServerFn({ method: "POST" })
       class_name: data.className || null,
       two_factor_enabled: data.twoFactorEnabled ?? false,
       permissions: data.permissions ?? [],
+      phone: data.phone || null,
+      position: data.position || null,
+      salary: data.salary ?? null,
+      start_date: data.startDate || null,
     });
     if (profileError) {
       await supabaseAdmin.auth.admin.deleteUser(user.user.id);
@@ -205,6 +209,10 @@ export const updateAccount = createServerFn({ method: "POST" })
         class_name: data.className || null,
         two_factor_enabled: data.twoFactorEnabled ?? false,
         permissions: data.permissions ?? [],
+        phone: data.phone || null,
+        position: data.position || null,
+        salary: data.salary ?? null,
+        start_date: data.startDate || null,
       })
       .eq("id", data.userId);
     if (error) throw new Error(error.message);
