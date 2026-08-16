@@ -53,21 +53,25 @@ export const setupSchema = z.object({
   schoolManager: accountSchema,
 });
 
-export const createAccountSchema = accountSchema.extend({
-  role: roleEnum,
-  accessLevel: levelEnum.optional(),
-  ...profileExtras,
-});
+export const createAccountSchema = accountSchema
+  .extend({
+    role: roleEnum,
+    accessLevel: levelEnum.optional(),
+    ...profileExtras,
+  })
+  .refine(requireSalary, salaryIssue);
 
-export const updateAccountSchema = z.object({
-  userId: z.string().uuid(),
-  fullName: z.string().min(2).max(120),
-  email: z.string().email(),
-  role: roleEnum,
-  accessLevel: levelEnum,
-  status: z.enum(["active", "suspended", "inactive"]),
-  ...profileExtras,
-});
+export const updateAccountSchema = z
+  .object({
+    userId: z.string().uuid(),
+    fullName: z.string().min(2).max(120),
+    email: z.string().email(),
+    role: roleEnum,
+    accessLevel: levelEnum,
+    status: z.enum(["active", "suspended", "inactive"]),
+    ...profileExtras,
+  })
+  .refine(requireSalary, salaryIssue);
 
 export const statusSchema = z.object({
   userId: z.string().uuid(),
