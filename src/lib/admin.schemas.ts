@@ -32,7 +32,21 @@ const profileExtras = {
   className: z.string().max(60).optional().nullable(),
   twoFactorEnabled: z.boolean().optional(),
   permissions: z.array(permissionEnum).optional(),
+  phone: z.string().max(40).optional().nullable(),
+  position: z.string().max(120).optional().nullable(),
+  salary: z.number().min(0).max(100000000).optional().nullable(),
+  startDate: z.string().max(20).optional().nullable(),
 };
+
+/** Payroll requires a salary for staff-side roles. */
+export const PAYROLL_ROLES = ["staff", "school_manager"] as const;
+const requireSalary = (v: { role: string; salary?: number | null }) =>
+  !(PAYROLL_ROLES as readonly string[]).includes(v.role) ||
+  (typeof v.salary === "number" && v.salary > 0);
+const salaryIssue = {
+  message: "Salary is required for staff and school manager accounts.",
+  path: ["salary"],
+} as const;
 
 export const setupSchema = z.object({
   superAdmin: accountSchema,
