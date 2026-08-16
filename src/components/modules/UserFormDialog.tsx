@@ -21,6 +21,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ACCESS_LABEL, ROLE_META, ROLES, type AccessLevel, type Role } from "@/lib/access";
+import { POSITIONS } from "@/lib/staff";
 import {
   ACCESS_DESCRIPTION,
   CLASSES,
@@ -46,6 +47,11 @@ export interface AccountRow {
   two_factor_enabled: boolean;
   permissions: PermissionId[] | null;
   force_password_change: boolean;
+  phone: string | null;
+  position: string | null;
+  employee_id: string | null;
+  salary: number | null;
+  start_date: string | null;
   last_login: string | null;
   created_at: string;
 }
@@ -64,7 +70,13 @@ export interface UserFormValues {
   confirmPassword: string;
   twoFactorEnabled: boolean;
   permissions: PermissionId[];
+  phone: string;
+  position: string;
+  salary: string;
+  startDate: string;
 }
+
+const PAYROLL_ROLES: Role[] = ["staff", "school_manager"];
 
 const LEVELS: AccessLevel[] = ["super_administrator", "administrator", "standard", "basic"];
 
@@ -83,6 +95,10 @@ function emptyForm(): UserFormValues {
     confirmPassword: "",
     twoFactorEnabled: false,
     permissions: [...DEFAULT_PERMISSIONS.basic],
+    phone: "",
+    position: "",
+    salary: "",
+    startDate: "",
   };
 }
 
@@ -101,6 +117,10 @@ function fromAccount(a: AccountRow): UserFormValues {
     confirmPassword: "",
     twoFactorEnabled: a.two_factor_enabled,
     permissions: a.permissions ?? [...DEFAULT_PERMISSIONS[a.access_level]],
+    phone: a.phone ?? "",
+    position: a.position ?? "",
+    salary: a.salary != null ? String(a.salary) : "",
+    startDate: a.start_date ?? "",
   };
 }
 
@@ -153,6 +173,13 @@ export function UserFormDialog({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (PAYROLL_ROLES.includes(form.role)) {
+      const salary = Number(form.salary);
+      if (!form.salary || !Number.isFinite(salary) || salary <= 0) {
+        setError("Salary is required for staff and school manager accounts.");
+        return;
+      }
+    }
     if (!editing || form.password) {
       if (form.password.length < 8) {
         setError("Password must be at least 8 characters.");
@@ -272,6 +299,65 @@ export function UserFormDialog({
                 </SelectContent>
               </Select>
             </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="uf-phone">Phone number</Label>
+            <Input
+              id="uf-phone"
+              type="tel"
+              value={form.phone}
+              onChange={(e) => set("phone", e.target.value)}
+            />
+          </div>
+
+          {PAYROLL_ROLES.includes(form.role) && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="uf-position">Position</Label>
+                <Select value={form.position} onValueChange={(v) => set("position", v)}>
+                  <SelectTrigger id="uf-position">
+                    <SelectValue placeholder="Select position" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {POSITIONS.map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="uf-salary">Salary (GHS)</Label>
+                <Input
+                  id="uf-salary"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  required
+                  value={form.salary}
+                  onChange={(e) => set("salary", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="uf-start">Start date</Label>
+                <Input
+                  id="uf-start"
+                  type="date"
+                  value={form.startDate}
+                  onChange={(e) => set("startDate", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="uf-empid">Employee ID</Label>
+                <Input
+                  id="uf-empid"
+                  readOnly
+                  value={account?.employee_id ?? "Generated automatically on save"}
+                />
+              </div>
+            </>
           )}
 
           <div className="space-y-2">
