@@ -45,8 +45,8 @@ const requireSalary = (v: { role: string; salary?: number | null | undefined }) 
   (typeof v.salary === "number" && v.salary > 0);
 const salaryIssue = {
   message: "Salary is required for staff and school manager accounts.",
-  path: ["salary"],
-} as const;
+  path: ["salary"] as (string | number)[],
+};
 
 export const setupSchema = z.object({
   superAdmin: accountSchema,
