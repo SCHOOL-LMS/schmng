@@ -50,6 +50,45 @@ export type Database = {
         }
         Relationships: []
       }
+      offer_letters: {
+        Row: {
+          candidate_email: string
+          candidate_name: string
+          created_at: string
+          created_by: string | null
+          id: string
+          position: string
+          salary: number
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          candidate_email: string
+          candidate_name: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          position: string
+          salary?: number
+          start_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          candidate_email?: string
+          candidate_name?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          position?: string
+          salary?: number
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       password_reset_requests: {
         Row: {
           created_at: string
@@ -87,6 +126,7 @@ export type Database = {
           created_at: string
           department: string | null
           email: string
+          employee_id: string | null
           force_password_change: boolean
           full_name: string
           gender: string | null
@@ -94,7 +134,11 @@ export type Database = {
           last_login: string | null
           password_reset_at: string | null
           permissions: Json
+          phone: string | null
+          position: string | null
           role: Database["public"]["Enums"]["app_role"]
+          salary: number | null
+          start_date: string | null
           status: string
           two_factor_enabled: boolean
           updated_at: string
@@ -106,6 +150,7 @@ export type Database = {
           created_at?: string
           department?: string | null
           email?: string
+          employee_id?: string | null
           force_password_change?: boolean
           full_name?: string
           gender?: string | null
@@ -113,7 +158,11 @@ export type Database = {
           last_login?: string | null
           password_reset_at?: string | null
           permissions?: Json
+          phone?: string | null
+          position?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          salary?: number | null
+          start_date?: string | null
           status?: string
           two_factor_enabled?: boolean
           updated_at?: string
@@ -125,6 +174,7 @@ export type Database = {
           created_at?: string
           department?: string | null
           email?: string
+          employee_id?: string | null
           force_password_change?: boolean
           full_name?: string
           gender?: string | null
@@ -132,7 +182,11 @@ export type Database = {
           last_login?: string | null
           password_reset_at?: string | null
           permissions?: Json
+          phone?: string | null
+          position?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          salary?: number | null
+          start_date?: string | null
           status?: string
           two_factor_enabled?: boolean
           updated_at?: string
@@ -175,6 +229,94 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      staff_performance: {
+        Row: {
+          comments: string
+          created_at: string
+          id: string
+          rating: string
+          rating_score: number
+          review_period: string
+          reviewer_id: string | null
+          staff_id: string
+          updated_at: string
+        }
+        Insert: {
+          comments?: string
+          created_at?: string
+          id?: string
+          rating: string
+          rating_score?: number
+          review_period: string
+          reviewer_id?: string | null
+          staff_id: string
+          updated_at?: string
+        }
+        Update: {
+          comments?: string
+          created_at?: string
+          id?: string
+          rating?: string
+          rating_score?: number
+          review_period?: string
+          reviewer_id?: string | null
+          staff_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_performance_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_schedules: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          end_time: string
+          id: string
+          schedule_date: string
+          schedule_type: string
+          staff_id: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          end_time: string
+          id?: string
+          schedule_date: string
+          schedule_type: string
+          staff_id: string
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          end_time?: string
+          id?: string
+          schedule_date?: string
+          schedule_type?: string
+          staff_id?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_schedules_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
