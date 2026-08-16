@@ -40,7 +40,7 @@ const profileExtras = {
 
 /** Payroll requires a salary for staff-side roles. */
 export const PAYROLL_ROLES = ["staff", "school_manager"] as const;
-const requireSalary = (v: { role: string; salary?: number | null }) =>
+const requireSalary = (v: { role: string; salary?: number | null | undefined }) =>
   !(PAYROLL_ROLES as readonly string[]).includes(v.role) ||
   (typeof v.salary === "number" && v.salary > 0);
 const salaryIssue = {
