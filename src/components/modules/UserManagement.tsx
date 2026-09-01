@@ -205,6 +205,10 @@ export function UserManagement() {
             status: values.status as "active",
             twoFactorEnabled: values.twoFactorEnabled,
             permissions: values.permissions,
+            phone: values.phone || null,
+            position: values.position || null,
+            salary: values.salary ? Number(values.salary) : null,
+            startDate: values.startDate || null,
           },
         });
         if (values.password) {
@@ -225,6 +229,10 @@ export function UserManagement() {
             className: values.className || null,
             twoFactorEnabled: values.twoFactorEnabled,
             permissions: values.permissions,
+            phone: values.phone || null,
+            position: values.position || null,
+            salary: values.salary ? Number(values.salary) : null,
+            startDate: values.startDate || null,
           },
         });
         toast.success("Account created");

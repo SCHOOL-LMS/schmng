@@ -4,6 +4,7 @@ import { useSession } from "@/hooks/useSession";
 import { Button } from "@/components/ui/button";
 import { canAccess, getModule } from "@/lib/access";
 import { UserManagement } from "@/components/modules/UserManagement";
+import { StaffManagement } from "@/components/modules/StaffManagement";
 
 export const Route = createFileRoute("/_authenticated/portal/$moduleId")({
   component: ModulePage,
@@ -65,6 +66,8 @@ function ModulePage() {
 
       {mod.id === "user-management" ? (
         <UserManagement />
+      ) : mod.id === "staff-management" ? (
+        <StaffManagement />
       ) : (
         <Panel title="Module placeholder">
           <div className="flex items-start gap-3">
