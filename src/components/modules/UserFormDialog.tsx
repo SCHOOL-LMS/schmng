@@ -130,12 +130,16 @@ export function UserFormDialog({
   account,
   busy,
   onSubmit,
+  defaultRole,
+  suggestedPassword,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   account: AccountRow | null;
   busy: boolean;
   onSubmit: (values: UserFormValues) => Promise<void>;
+  defaultRole?: Role;
+  suggestedPassword?: string;
 }) {
   const editing = Boolean(account);
   const [form, setForm] = useState<UserFormValues>(emptyForm());
@@ -144,8 +148,23 @@ export function UserFormDialog({
   useEffect(() => {
     if (!open) return;
     setError(null);
-    setForm(account ? fromAccount(account) : emptyForm());
-  }, [open, account]);
+    if (account) {
+      setForm(fromAccount(account));
+      return;
+    }
+    const base = emptyForm();
+    if (defaultRole) {
+      const level = ROLE_META[defaultRole].accessLevel;
+      base.role = defaultRole;
+      base.accessLevel = level;
+      base.permissions = [...DEFAULT_PERMISSIONS[level]];
+    }
+    if (suggestedPassword) {
+      base.password = suggestedPassword;
+      base.confirmPassword = suggestedPassword;
+    }
+    setForm(base);
+  }, [open, account, defaultRole, suggestedPassword]);
 
   const set = <K extends keyof UserFormValues>(key: K, value: UserFormValues[K]) =>
     setForm((f) => ({ ...f, [key]: value }));

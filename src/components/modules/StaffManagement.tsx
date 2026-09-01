@@ -497,7 +497,7 @@ export function StaffManagement() {
             </div>
             <div className="space-y-2">
               <Label>Position</Label>
-              <Select name="position" required defaultValue={POSITIONS[0]}>
+              <Select name="position" required defaultValue="Teacher">
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
