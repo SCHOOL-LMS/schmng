@@ -77,4 +77,4 @@ export async function logAudit(
 }
 
 export const ACCOUNT_COLUMNS =
-  "id, full_name, email, username, role, access_level, status, gender, department, class_name, two_factor_enabled, permissions, force_password_change, last_login, created_at, phone, position, employee_id, salary, start_date";
+  "id, full_name, email, username, role, access_level, status, gender, department, class_name, two_factor_enabled, permissions, force_password_change, last_login, created_at, phone, position, employee_id, admission_number, salary, start_date";

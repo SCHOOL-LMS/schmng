@@ -50,6 +50,7 @@ export interface AccountRow {
   phone: string | null;
   position: string | null;
   employee_id: string | null;
+  admission_number?: string | null;
   salary: number | null;
   start_date: string | null;
   last_login: string | null;
@@ -303,21 +304,31 @@ export function UserFormDialog({
           </div>
 
           {form.role === "student" && (
-            <div className="space-y-2">
-              <Label htmlFor="uf-class">Class</Label>
-              <Select value={form.className} onValueChange={(v) => set("className", v)}>
-                <SelectTrigger id="uf-class">
-                  <SelectValue placeholder="Select class" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CLASSES.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="uf-class">Class</Label>
+                <Select value={form.className} onValueChange={(v) => set("className", v)}>
+                  <SelectTrigger id="uf-class">
+                    <SelectValue placeholder="Select class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CLASSES.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="uf-admno">Admission number / Student ID</Label>
+                <Input
+                  id="uf-admno"
+                  readOnly
+                  value={account?.admission_number ?? "Generated automatically on save"}
+                />
+              </div>
+            </>
           )}
 
           <div className="space-y-2">
