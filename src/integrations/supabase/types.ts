@@ -122,6 +122,7 @@ export type Database = {
       profiles: {
         Row: {
           access_level: Database["public"]["Enums"]["access_level"]
+          admission_number: string | null
           class_name: string | null
           created_at: string
           department: string | null
@@ -146,6 +147,7 @@ export type Database = {
         }
         Insert: {
           access_level?: Database["public"]["Enums"]["access_level"]
+          admission_number?: string | null
           class_name?: string | null
           created_at?: string
           department?: string | null
@@ -170,6 +172,7 @@ export type Database = {
         }
         Update: {
           access_level?: Database["public"]["Enums"]["access_level"]
+          admission_number?: string | null
           class_name?: string | null
           created_at?: string
           department?: string | null
