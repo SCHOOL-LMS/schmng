@@ -50,6 +50,7 @@ export interface AccountRow {
   phone: string | null;
   position: string | null;
   employee_id: string | null;
+  admission_number?: string | null;
   salary: number | null;
   start_date: string | null;
   last_login: string | null;
