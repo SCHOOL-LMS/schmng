@@ -14,6 +14,132 @@ export type Database = {
   }
   public: {
     Tables: {
+      admissions: {
+        Row: {
+          address: string | null
+          admission_number: string | null
+          alt_contact: string | null
+          assistance_needed: string | null
+          city: string | null
+          class_admitted: string
+          community: string | null
+          created_at: string
+          created_by: string | null
+          digital_address: string | null
+          disability_status: string
+          disability_type: string | null
+          dob: string | null
+          emergency_name: string | null
+          emergency_phone: string | null
+          emergency_relationship: string | null
+          emergency_residence: string | null
+          emergency_residence_district: string | null
+          gender: string
+          hometown: string | null
+          hometown_district: string | null
+          id: string
+          last_attendance: string | null
+          parent_email: string
+          parent_name: string
+          parent_phone: string | null
+          parent_profile_id: string | null
+          place_of_birth: string | null
+          previous_class: string | null
+          previous_school: string | null
+          reason_for_leaving: string | null
+          relationship: string | null
+          residence: string | null
+          residence_district: string | null
+          status: string
+          student_login_email: string | null
+          student_name: string
+          student_profile_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          admission_number?: string | null
+          alt_contact?: string | null
+          assistance_needed?: string | null
+          city?: string | null
+          class_admitted: string
+          community?: string | null
+          created_at?: string
+          created_by?: string | null
+          digital_address?: string | null
+          disability_status?: string
+          disability_type?: string | null
+          dob?: string | null
+          emergency_name?: string | null
+          emergency_phone?: string | null
+          emergency_relationship?: string | null
+          emergency_residence?: string | null
+          emergency_residence_district?: string | null
+          gender?: string
+          hometown?: string | null
+          hometown_district?: string | null
+          id?: string
+          last_attendance?: string | null
+          parent_email: string
+          parent_name: string
+          parent_phone?: string | null
+          parent_profile_id?: string | null
+          place_of_birth?: string | null
+          previous_class?: string | null
+          previous_school?: string | null
+          reason_for_leaving?: string | null
+          relationship?: string | null
+          residence?: string | null
+          residence_district?: string | null
+          status?: string
+          student_login_email?: string | null
+          student_name: string
+          student_profile_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          admission_number?: string | null
+          alt_contact?: string | null
+          assistance_needed?: string | null
+          city?: string | null
+          class_admitted?: string
+          community?: string | null
+          created_at?: string
+          created_by?: string | null
+          digital_address?: string | null
+          disability_status?: string
+          disability_type?: string | null
+          dob?: string | null
+          emergency_name?: string | null
+          emergency_phone?: string | null
+          emergency_relationship?: string | null
+          emergency_residence?: string | null
+          emergency_residence_district?: string | null
+          gender?: string
+          hometown?: string | null
+          hometown_district?: string | null
+          id?: string
+          last_attendance?: string | null
+          parent_email?: string
+          parent_name?: string
+          parent_phone?: string | null
+          parent_profile_id?: string | null
+          place_of_birth?: string | null
+          previous_class?: string | null
+          previous_school?: string | null
+          reason_for_leaving?: string | null
+          relationship?: string | null
+          residence?: string | null
+          residence_district?: string | null
+          status?: string
+          student_login_email?: string | null
+          student_name?: string
+          student_profile_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -49,6 +175,47 @@ export type Database = {
           target_user_id?: string | null
         }
         Relationships: []
+      }
+      class_teachers: {
+        Row: {
+          class_name: string
+          created_at: string
+          id: string
+          teacher_email: string
+          teacher_id: string | null
+          teacher_name: string
+          teacher_phone: string
+          updated_at: string
+        }
+        Insert: {
+          class_name: string
+          created_at?: string
+          id?: string
+          teacher_email?: string
+          teacher_id?: string | null
+          teacher_name?: string
+          teacher_phone?: string
+          updated_at?: string
+        }
+        Update: {
+          class_name?: string
+          created_at?: string
+          id?: string
+          teacher_email?: string
+          teacher_id?: string | null
+          teacher_name?: string
+          teacher_phone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_teachers_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       offer_letters: {
         Row: {
@@ -317,6 +484,182 @@ export type Database = {
             columns: ["staff_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_attendance: {
+        Row: {
+          admission_id: string
+          attendance_date: string
+          created_at: string
+          id: string
+          note: string
+          status: string
+        }
+        Insert: {
+          admission_id: string
+          attendance_date?: string
+          created_at?: string
+          id?: string
+          note?: string
+          status?: string
+        }
+        Update: {
+          admission_id?: string
+          attendance_date?: string
+          created_at?: string
+          id?: string
+          note?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_attendance_admission_id_fkey"
+            columns: ["admission_id"]
+            isOneToOne: false
+            referencedRelation: "admissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_exeat: {
+        Row: {
+          admission_id: string
+          created_at: string
+          departed_at: string | null
+          destination: string
+          id: string
+          reason: string
+          return_at: string | null
+          returned_at: string | null
+          signed_by_id: string | null
+          signed_by_name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admission_id: string
+          created_at?: string
+          departed_at?: string | null
+          destination?: string
+          id?: string
+          reason?: string
+          return_at?: string | null
+          returned_at?: string | null
+          signed_by_id?: string | null
+          signed_by_name?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admission_id?: string
+          created_at?: string
+          departed_at?: string | null
+          destination?: string
+          id?: string
+          reason?: string
+          return_at?: string | null
+          returned_at?: string | null
+          signed_by_id?: string | null
+          signed_by_name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_exeat_admission_id_fkey"
+            columns: ["admission_id"]
+            isOneToOne: false
+            referencedRelation: "admissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_fees: {
+        Row: {
+          admission_id: string
+          amount_due: number
+          amount_paid: number
+          created_at: string
+          due_date: string | null
+          id: string
+          status: string
+          term: string
+          updated_at: string
+        }
+        Insert: {
+          admission_id: string
+          amount_due?: number
+          amount_paid?: number
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          status?: string
+          term: string
+          updated_at?: string
+        }
+        Update: {
+          admission_id?: string
+          amount_due?: number
+          amount_paid?: number
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          status?: string
+          term?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_fees_admission_id_fkey"
+            columns: ["admission_id"]
+            isOneToOne: false
+            referencedRelation: "admissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_performance: {
+        Row: {
+          admission_id: string
+          assessment_type: string
+          grade: string
+          id: string
+          recorded_at: string
+          remarks: string
+          score: number
+          subject: string
+          term: string
+        }
+        Insert: {
+          admission_id: string
+          assessment_type?: string
+          grade?: string
+          id?: string
+          recorded_at?: string
+          remarks?: string
+          score?: number
+          subject: string
+          term: string
+        }
+        Update: {
+          admission_id?: string
+          assessment_type?: string
+          grade?: string
+          id?: string
+          recorded_at?: string
+          remarks?: string
+          score?: number
+          subject?: string
+          term?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_performance_admission_id_fkey"
+            columns: ["admission_id"]
+            isOneToOne: false
+            referencedRelation: "admissions"
             referencedColumns: ["id"]
           },
         ]
