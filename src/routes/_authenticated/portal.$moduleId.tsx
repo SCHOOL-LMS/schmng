@@ -71,7 +71,12 @@ function ModulePage() {
         <UserManagement />
       ) : mod.id === "staff-management" ? (
         <StaffManagement />
+      ) : mod.id === "admissions" ? (
+        <AdmissionsManagement />
+      ) : mod.id === "my-children" ? (
+        <ParentChildren />
       ) : (
+
         <Panel title="Module placeholder">
           <div className="flex items-start gap-3">
             <Construction className="mt-0.5 size-5 text-warning" aria-hidden />
