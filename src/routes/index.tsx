@@ -256,7 +256,7 @@ function AuthPanel({
         {view === "login" ? (
           <form className="mt-6 space-y-4" onSubmit={signIn}>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{isStudent ? "Parent email (from admission)" : "Email"}</Label>
               <Input
                 id="email"
                 type="email"
@@ -266,17 +266,35 @@ function AuthPanel({
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
+            {isStudent ? (
+              <div className="space-y-2">
+                <Label htmlFor="admno">Admission number</Label>
+                <Input
+                  id="admno"
+                  required
+                  placeholder="ADM-2026-0001"
+                  value={admissionNumber}
+                  onChange={(e) => setAdmissionNumber(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Students sign in with the parent email given at admission and their own
+                  admission number.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+            )}
+
             <Button type="submit" className="w-full" disabled={busy}>
               <LogIn className="size-4" aria-hidden /> Sign in
             </Button>
