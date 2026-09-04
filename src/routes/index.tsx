@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ACCESS_LABEL, ROLES, ROLE_META, type Role } from "@/lib/access";
 import { getSetupStatus, recordLogin, requestPasswordReset } from "@/lib/admin.functions";
+import { resolveStudentLogin } from "@/lib/admissions.functions";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
