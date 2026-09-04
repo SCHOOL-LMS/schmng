@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { canAccess, getModule } from "@/lib/access";
 import { UserManagement } from "@/components/modules/UserManagement";
 import { StaffManagement } from "@/components/modules/StaffManagement";
+import { AdmissionsManagement } from "@/components/modules/AdmissionsManagement";
+import { ParentChildren } from "@/components/modules/ParentChildren";
+
 
 export const Route = createFileRoute("/_authenticated/portal/$moduleId")({
   component: ModulePage,
@@ -68,7 +71,12 @@ function ModulePage() {
         <UserManagement />
       ) : mod.id === "staff-management" ? (
         <StaffManagement />
+      ) : mod.id === "admissions" ? (
+        <AdmissionsManagement />
+      ) : mod.id === "my-children" ? (
+        <ParentChildren />
       ) : (
+
         <Panel title="Module placeholder">
           <div className="flex items-start gap-3">
             <Construction className="mt-0.5 size-5 text-warning" aria-hidden />

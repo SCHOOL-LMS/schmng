@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ACCESS_LABEL, ROLES, ROLE_META, type Role } from "@/lib/access";
 import { getSetupStatus, recordLogin, requestPasswordReset } from "@/lib/admin.functions";
+import { resolveStudentLogin } from "@/lib/admissions.functions";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -149,17 +151,44 @@ function AuthPanel({
 }) {
   const meta = ROLE_META[role];
   const navigate = useNavigate();
+  const isStudent = role === "student";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [admissionNumber, setAdmissionNumber] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const raiseReset = useServerFn(requestPasswordReset);
   const stampLogin = useServerFn(recordLogin);
+  const resolveStudent = useServerFn(resolveStudentLogin);
 
   const signIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    // Student login is the parent email provided at admission + the child's
+    // admission number; it resolves to the student identity created then.
+    let loginEmail = email;
+    let loginPassword = password;
+    if (isStudent) {
+      try {
+        const resolved = await resolveStudent({
+          data: { parentEmail: email, admissionNumber: admissionNumber.trim() },
+        });
+        loginEmail = resolved.email;
+        loginPassword = admissionNumber.trim().toUpperCase();
+      } catch (err) {
+        setBusy(false);
+        toast.error(
+          err instanceof Error ? err.message : "Could not verify those admission details.",
+        );
+        return;
+      }
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: loginEmail,
+      password: loginPassword,
+    });
     if (error || !data.user) {
       setBusy(false);
       toast.error(error?.message ?? "Sign in failed");
@@ -190,6 +219,7 @@ function AuthPanel({
     }
     navigate({ to: "/portal" });
   };
+
 
   const submitReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -226,7 +256,7 @@ function AuthPanel({
         {view === "login" ? (
           <form className="mt-6 space-y-4" onSubmit={signIn}>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{isStudent ? "Parent email (from admission)" : "Email"}</Label>
               <Input
                 id="email"
                 type="email"
@@ -236,17 +266,35 @@ function AuthPanel({
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
+            {isStudent ? (
+              <div className="space-y-2">
+                <Label htmlFor="admno">Admission number</Label>
+                <Input
+                  id="admno"
+                  required
+                  placeholder="ADM-2026-0001"
+                  value={admissionNumber}
+                  onChange={(e) => setAdmissionNumber(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Students sign in with the parent email given at admission and their own
+                  admission number.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+            )}
+
             <Button type="submit" className="w-full" disabled={busy}>
               <LogIn className="size-4" aria-hidden /> Sign in
             </Button>

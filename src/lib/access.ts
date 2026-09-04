@@ -123,6 +123,15 @@ export const MODULES: ModuleDef[] = [
     roles: ADMINS,
   },
   {
+    id: "my-children",
+    name: "My Children",
+    description: "Each admitted child's records, fees, attendance and exeat status.",
+    icon: HeartHandshake,
+    category: "People",
+    roles: ["parent"],
+  },
+
+  {
     id: "attendance",
     name: "Attendance",
     description: "Daily registers, absence tracking and reports.",
