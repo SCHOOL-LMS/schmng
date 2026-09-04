@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { canAccess, getModule } from "@/lib/access";
 import { UserManagement } from "@/components/modules/UserManagement";
 import { StaffManagement } from "@/components/modules/StaffManagement";
+import { AdmissionsManagement } from "@/components/modules/AdmissionsManagement";
+import { ParentChildren } from "@/components/modules/ParentChildren";
+
 
 export const Route = createFileRoute("/_authenticated/portal/$moduleId")({
   component: ModulePage,
