@@ -217,6 +217,42 @@ export type Database = {
           },
         ]
       }
+      education_levels: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          id: string
+          max_age: number | null
+          min_age: number | null
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          id?: string
+          max_age?: number | null
+          min_age?: number | null
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          id?: string
+          max_age?: number | null
+          min_age?: number | null
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       offer_letters: {
         Row: {
           candidate_email: string
@@ -361,6 +397,143 @@ export type Database = {
           two_factor_enabled?: boolean
           updated_at?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      school_branding: {
+        Row: {
+          accent_color: string
+          created_at: string
+          currency: string
+          date_format: string
+          display_name: string
+          id: string
+          language: string
+          locale: string
+          logo_url: string | null
+          primary_color: string
+          school_id: string
+          show_powered_by: boolean
+          tagline: string
+          updated_at: string
+        }
+        Insert: {
+          accent_color?: string
+          created_at?: string
+          currency?: string
+          date_format?: string
+          display_name?: string
+          id?: string
+          language?: string
+          locale?: string
+          logo_url?: string | null
+          primary_color?: string
+          school_id: string
+          show_powered_by?: boolean
+          tagline?: string
+          updated_at?: string
+        }
+        Update: {
+          accent_color?: string
+          created_at?: string
+          currency?: string
+          date_format?: string
+          display_name?: string
+          id?: string
+          language?: string
+          locale?: string
+          logo_url?: string | null
+          primary_color?: string
+          school_id?: string
+          show_powered_by?: boolean
+          tagline?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_branding_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: true
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      school_types: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          description: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          description?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      schools: {
+        Row: {
+          active: boolean
+          code: string
+          country: string
+          created_at: string
+          currency: string
+          id: string
+          level_codes: string[]
+          locale: string
+          name: string
+          region: string
+          timezone: string
+          type_code: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          country?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          level_codes?: string[]
+          locale?: string
+          name: string
+          region?: string
+          timezone?: string
+          type_code?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          country?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          level_codes?: string[]
+          locale?: string
+          name?: string
+          region?: string
+          timezone?: string
+          type_code?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -660,6 +833,106 @@ export type Database = {
             columns: ["admission_id"]
             isOneToOne: false
             referencedRelation: "admissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subjects: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          credits: number | null
+          elective: boolean
+          id: string
+          level_code: string
+          name: string
+          school_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          credits?: number | null
+          elective?: boolean
+          id?: string
+          level_code: string
+          name: string
+          school_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          credits?: number | null
+          elective?: boolean
+          id?: string
+          level_code?: string
+          name?: string
+          school_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subjects_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_settings: {
+        Row: {
+          academic_year_start_month: number
+          created_at: string
+          departments: string[]
+          features: Json
+          grading_system: string
+          id: string
+          positions: string[]
+          rating_scale: Json
+          schedule_types: string[]
+          school_id: string
+          updated_at: string
+          week_starts_on: string
+        }
+        Insert: {
+          academic_year_start_month?: number
+          created_at?: string
+          departments?: string[]
+          features?: Json
+          grading_system?: string
+          id?: string
+          positions?: string[]
+          rating_scale?: Json
+          schedule_types?: string[]
+          school_id: string
+          updated_at?: string
+          week_starts_on?: string
+        }
+        Update: {
+          academic_year_start_month?: number
+          created_at?: string
+          departments?: string[]
+          features?: Json
+          grading_system?: string
+          id?: string
+          positions?: string[]
+          rating_scale?: Json
+          schedule_types?: string[]
+          school_id?: string
+          updated_at?: string
+          week_starts_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_settings_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: true
+            referencedRelation: "schools"
             referencedColumns: ["id"]
           },
         ]
