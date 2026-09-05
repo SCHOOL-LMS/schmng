@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import type { Json } from "@/integrations/supabase/types";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertSuperAdmin, logAudit } from "@/lib/admin.server";
 import {
@@ -104,7 +105,7 @@ export const createSchool = createServerFn({ method: "POST" })
         positions: DEFAULT_POSITIONS,
         departments: DEFAULT_DEPARTMENTS,
         schedule_types: DEFAULT_SCHEDULE_TYPES,
-        rating_scale: DEFAULT_RATING_SCALE,
+        rating_scale: DEFAULT_RATING_SCALE as unknown as Json,
         features: defaultModuleFeatures(),
       }),
       supabase.from("school_branding").insert({
@@ -266,7 +267,7 @@ export const saveTenantSettings = createServerFn({ method: "POST" })
           positions: data.positions,
           departments: data.departments,
           schedule_types: data.scheduleTypes,
-          rating_scale: data.ratingScale ?? DEFAULT_RATING_SCALE,
+          rating_scale: (data.ratingScale ?? DEFAULT_RATING_SCALE) as unknown as Json,
           grading_system: data.gradingSystem,
           academic_year_start_month: data.academicYearStartMonth,
           week_starts_on: data.weekStartsOn,
